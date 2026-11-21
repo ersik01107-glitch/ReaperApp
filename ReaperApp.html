@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>REAPER Live</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+:root{--a:#ff1e56;--b:#a855f7;--bg:#07060d;--c:rgba(24,21,40,.88);--br:rgba(255,255,255,.1)}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,sans-serif}
+body{background:var(--bg);background-image:radial-gradient(circle at 15% 10%,rgba(255,30,86,.24),transparent 45%),radial-gradient(circle at 85% 85%,rgba(168,85,247,.2),transparent 45%);color:#fff;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+#auth{position:fixed;inset:0;z-index:99;background:radial-gradient(circle at top,#2b0815,#07060d 65%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.card{width:100%;max-width:340px;background:var(--c);border:1px solid var(--br);border-radius:22px;padding:20px}
+.inp{width:100%;background:#0c0a16;border:1px solid var(--br);color:#fff;padding:12px 15px;border-radius:14px;font-size:15px;outline:none}
+.btn{width:100%;padding:13px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--a),var(--b));color:#fff;font-weight:900;font-size:14px;cursor:pointer;margin-top:12px}
+.top{padding:13px 16px;background:rgba(18,16,30,.92);border-bottom:1px solid var(--br);display:flex;justify-content:space-between;align-items:center}
+.bn{font-size:20px;font-weight:900;letter-spacing:2px;background:linear-gradient(90deg,var(--a),var(--b));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.pill{font-size:11px;font-weight:800;padding:5px 10px;border-radius:20px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.5);color:#34d399}
+.list{flex:1;overflow-y:auto;padding:12px}
+.row{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;background:var(--c);border:1px solid var(--br);margin-bottom:8px;cursor:pointer}
+.ava{width:46px;height:46px;border-radius:15px;background:linear-gradient(135deg,var(--a),var(--b));display:flex;align-items:center;justify-content:center;font-weight:900}
+.fab{position:fixed;right:18px;bottom:24px;width:58px;height:58px;border-radius:20px;border:none;background:linear-gradient(135deg,var(--a),var(--b));color:#fff;font-size:30px;box-shadow:0 8px 24px rgba(255,30,86,.5);cursor:pointer}
+#cv{position:fixed;inset:0;z-index:50;background:var(--bg);display:none;flex-direction:column}
+.msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
+.b{max-width:82%;padding:10px 14px;border-radius:16px;font-size:14.5px;line-height:1.4}
+.b.in{align-self:flex-start;background:var(--c);border:1px solid var(--br);border-bottom-left-radius:4px}
+.b.out{align-self:flex-end;background:linear-gradient(135deg,var(--a),var(--b));border-bottom-right-radius:4px}
+.bar{display:flex;gap:8px;padding:10px 12px;background:rgba(18,16,30,.92);border-top:1px solid var(--br)}
+.snd{width:46px;height:46px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--a),var(--b));color:#fff;font-size:18px;cursor:pointer;flex-shrink:0}
+.mod{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:20px}
+.tst{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--a),var(--b));padding:10px 18px;border-radius:20px;font-size:13px;font-weight:800;display:none;z-index:110;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="auth">
+  <div class="bn" style="font-size:28px;margin-bottom:6px">💀 REAPER</div>
+  <div style="font-size:12px;color:#94a3b8;margin-bottom:18px">ЖИВАЯ СВЯЗЬ МЕЖДУ ТЕЛЕФОНАМИ</div>
+  <div class="card">
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:6px">ТВОЙ НИК (ЛАТИНИЦА ИЛИ ЦИФРЫ)</div>
+    <input id="myNick" class="inp" placeholder="Напр: DEATH или 777" maxlength="12">
+    <button class="btn" id="loginBtn">ВОЙТИ В СЕТЬ</button>
+  </div>
+</div>
+<div class="top">
+  <span class="bn">REAPER</span>
+  <span class="pill" id="myBadge">● ОФЛАЙН</span>
+</div>
+<div class="list" id="chatList">
+  <div style="text-align:center;color:#94a3b8;margin-top:40px;font-size:14px">Нажми <b>+</b> внизу, чтобы добавить друга по нику</div>
+</div>
+<button class="fab" id="addBtn">+</button>
+<div id="cv">
+  <div class="top">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button id="backBtn" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer">←</button>
+      <b id="cvName" style="font-size:17px"></b>
+    </div>
+    <span class="pill">● LIVE</span>
+  </div>
+  <div class="msgs" id="cvMsgs"></div>
+  <div class="bar">
+    <input id="msgInp" class="inp" placeholder="Написать сообщение...">
+    <button class="snd" id="sendBtn">➤</button>
+  </div>
+</div>
+<div class="mod" id="addMod">
+  <div class="card">
+    <b style="display:block;margin-bottom:10px">Добавить друга</b>
+    <input id="frInp" class="inp" placeholder="Введи ник друга (напр. NURIK)">
+    <div style="display:flex;gap:8px">
+      <button class="btn" style="background:#26233a" id="cancelAdd">Отмена</button>
+      <button class="btn" id="okAdd">Написать</button>
+    </div>
+  </div>
+</div>
+<div class="tst" id="tst"></div>
+<script>
+const $=id=>document.getElementById(id),PFX='reaper-live-v1-';
+let peer=null,myId='',cur=null;const chats={},conns={};
+function toast(m){const t=$('tst');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2400);}
+const nt=()=>new Date().toTimeString().slice(0,5);
+function ensureChat(id){if(!chats[id])chats[id]=[];renderList();}
+function renderList(){
+  const ks=Object.keys(chats);if(!ks.length)return;
+  $('chatList').innerHTML=ks.map(id=>{const m=chats[id],l=m[m.length-1];return`<div class="row" onclick="openChat('${id}')"><div class="ava">${id.slice(0,2)}</div><div style="flex:1;min-width:0"><div style="font-weight:800;font-size:16px">@${id}</div><div style="font-size:13px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l?l.text:'Нажми, чтобы написать'}</div></div><div style="font-size:11px;color:#94a3b8">${l?l.time:''}</div></div>`;}).join('');
+}
+function renderMsgs(){
+  if(!cur)return;const b=$('cvMsgs');
+  b.innerHTML=(chats[cur]||[]).map(m=>`<div class="b ${m.t}"><div>${m.text}</div><div style="font-size:10px;opacity:.7;text-align:right;margin-top:3px">${m.time}</div></div>`).join('');
+  b.scrollTop=b.scrollHeight;
+}
+function bindConn(conn){
+  const fid=conn.peer.replace(PFX,'');conns[fid]=conn;ensureChat(fid);
+  conn.on('data',d=>{ensureChat(fid);chats[fid].push({t:'in',text:d.text,time:d.time||nt()});renderList();if(cur===fid)renderMsgs();else toast('СМС от @'+fid);});
+  conn.on('close',()=>{delete conns[fid];});
+}
+$('loginBtn').onclick=()=>{
+  const raw=$('myNick').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'');
+  if(raw.length<2)return toast('Минимум 2 символа (латиница/цифры)');
+  myId=raw;$('loginBtn').textContent='ПОДКЛЮЧЕНИЕ...';peer=new Peer(PFX+myId);
+  peer.on('open',()=>{$('auth').style.display='none';$('myBadge').textContent='● @'+myId;toast('В сети как @'+myId);});
+  peer.on('connection',conn=>bindConn(conn));
+  peer.on('error',err=>{$('loginBtn').textContent='ВОЙТИ В СЕТЬ';toast(err.type==='unavailable-id'?'Ник уже занят!':'Сеть: '+err.type);});
+};
+window.openChat=id=>{cur=id;ensureChat(id);$('cvName').textContent='@'+id;$('cv').style.display='flex';renderMsgs();if(!conns[id]||!conns[id].open)bindConn(peer.connect(PFX+id));};
+function send(){
+  const txt=$('msgInp').value.trim();if(!txt||!cur)return;$('msgInp').value='';
+  const payload={text:txt,time:nt()};chats[cur].push({t:'out',...payload});renderMsgs();renderList();
+  let c=conns[cur];
+  if(!c||!c.open){c=peer.connect(PFX+cur);bindConn(c);c.on('open',()=>c.send(payload));}else c.send(payload);
+}
+$('sendBtn').onclick=send;$('msgInp').onkeydown=e=>{if(e.key==='Enter')send();};
+$('backBtn').onclick=()=>{$('cv').style.display='none';cur=null;renderList();};
+$('addBtn').onclick=()=>{$('frInp').value='';$('addMod').style.display='flex';};
+$('cancelAdd').onclick=()=>$('addMod').style.display='none';
+$('okAdd').onclick=()=>{const f=$('frInp').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'');if(f.length<2||f===myId)return toast('Введи ник друга');$('addMod').style.display='none';openChat(f);};
+</script>
+</body>
+</html>
